@@ -1,0 +1,13 @@
+[package]
+name = "rill"
+description = "Piru's networking engine and stream management."
+
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[dependencies]
+
+[lints]
+workspace = true

@@ -1,0 +1,11 @@
+[package]
+name = "piru"
+description = "A game engine built around a custom scripting language meant to make smooth, performant multiplayer as simple as possible."
+
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true

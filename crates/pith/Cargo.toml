@@ -1,0 +1,13 @@
+[package]
+name = "pith"
+description = "A register-based virtual machine for Aven."
+
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[dependencies]
+
+[lints]
+workspace = true

@@ -1,0 +1,11 @@
+[package]
+name = "aven"
+description = "A deterministic scripting language designed for scripting networked games."
+
+version.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[lints]
+workspace = true
