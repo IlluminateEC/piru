@@ -5,7 +5,7 @@ description = "A game engine built around a custom scripting language meant to m
 version.workspace = true
 edition.workspace = true
 repository.workspace = true
-license.workspace = true
+include.workspace = true
 
 [lints]
 workspace = true

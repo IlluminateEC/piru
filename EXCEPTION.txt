@@ -1,0 +1,30 @@
+Piru Game Code Exception
+Copyright (C) 2026 The Piru Authors
+
+The following is an additional permission granted under Section 7 of
+the GNU Affero General Public License, version 3 (AGPLv3).
+
+For the purposes of this exception, the following definitions are
+used:
+1. Engine Content: any code, assets, or shaders included in a
+  distribution of the game engine itself, along with any
+  modifications, patches, or extensions made to that content.
+2. Game Content: scripts, shaders, independent additional libraries,
+  or assets.
+
+Game Content loaded by, linked with, executed by, rendered by, hosted
+by, served by, or distributed with the engine is considered a separate
+work, and this work may be distributed under terms of its author's
+choice and is not required to abide by the AGPLv3.
+
+When Game Content relies on modified Engine Content, the Game Content
+is still considered a separate work and only the modified Engine
+Content must be provided under the terms of the AGPLv3.
+
+Engine Content does not fall under this exception and must follow the
+terms of the AGPLv3 without this exception.
+
+This exception may be distributed freely by any distributions of this
+codebase. Downstream distributors of modified Engine Content may
+choose to remove this exception, in which case the modified engine
+code reverts to standard AGPLv3.
