@@ -6,3 +6,5 @@ Piru is a game engine that is meant to make it as easy as possible to develop pe
 ## Licensing
 
 Piru is available under the [GNU Affero General Public License version 3](./LICENSE-AGPLv3.txt) with an [exception for game content](./EXCEPTION.txt).
+
+By contributing to Piru, you assert that you are contributing the code under the [AGPLv3](./LICENSE-AGPLv3.txt) *and* the [exception](./EXCEPTION.txt), and that you have the legal right to do so.
