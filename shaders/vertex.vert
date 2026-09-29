@@ -16,8 +16,9 @@ struct RectMetadata {
 
 // [[vk::binding(0, 0)]] StructuredBuffer<RectMetadata> rect_metadata;
 
-static const RectMetadata rect_metadata[1] = {
-    { 0.25, 0.25 }
+static const RectMetadata rect_metadata[2] = {
+    { 0.25, 0.25 },
+    { -0.1, -0.1 },
 };
 
 struct RectPosition {
@@ -26,8 +27,9 @@ struct RectPosition {
   int index;
 };
 
-static const RectPosition rect_positions[1] = {
-    { 0.25, 0.25, 0 }
+static const RectPosition rect_positions[2] = {
+    { 0.25, 0.25, 0 },
+    { 0.25, 0.25, 1 },
 };
 
 // [[vk::binding(1, 0)]] StructuredBuffer<RectPosition> rect_positions;

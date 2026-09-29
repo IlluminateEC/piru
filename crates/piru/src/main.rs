@@ -4,11 +4,7 @@ pub mod surface;
 pub mod window;
 pub mod window_manager;
 
-use std::{
-    hint::unreachable_unchecked,
-    sync::Arc,
-    task::{Context, Waker},
-};
+use std::{hint::unreachable_unchecked, sync::Arc};
 
 use winit::application::ApplicationHandler;
 

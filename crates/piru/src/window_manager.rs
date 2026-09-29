@@ -1,10 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{
-    error::RenderError,
-    graphics_state::{GraphicsState, GraphicsStateInternal},
-    window::Window,
-};
+use crate::{error::RenderError, graphics_state::GraphicsStateInternal, window::Window};
 
 pub type WindowId = winit::window::WindowId;
 

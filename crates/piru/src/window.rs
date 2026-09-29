@@ -1,8 +1,6 @@
 use std::sync::Arc;
 
-use crate::{
-    GraphicsState, error::RenderError, graphics_state::GraphicsStateInternal, surface::Surface,
-};
+use crate::{error::RenderError, graphics_state::GraphicsStateInternal, surface::Surface};
 
 pub struct Window {
     graphics_state: Arc<GraphicsStateInternal>,

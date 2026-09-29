@@ -9,6 +9,7 @@ include.workspace = true
 
 [dependencies]
 colog = "1.4.0"
+image = { version = "0.25.10", default-features = false, features = ["png"] }
 log.workspace = true
 pollster = "1.0.1"
 wgpu.workspace = true

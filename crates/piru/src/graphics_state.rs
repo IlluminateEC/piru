@@ -178,8 +178,6 @@ impl InitializedState {
 
         shader_registry.add_pipeline(vertex, fragment);
 
-        // let render_pipelines = vec![Arc::new(render_pipeline)];
-
         Ok(Self {
             adapter,
             device,
@@ -222,7 +220,7 @@ impl GraphicsStateInternal {
         let state = self.state.read().map_err(|_| RenderError::GpuPoisoned)?;
         let state = state.as_ref().ok_or(RenderError::NotInitializedYet)?;
 
-        closure(&state).into()
+        closure(state).into()
     }
 
     pub async fn with_state_async<R, RF, RV, C>(&self, closure: C) -> Result<RV, RenderError>
@@ -234,7 +232,7 @@ impl GraphicsStateInternal {
         let state = self.state.read().map_err(|_| RenderError::GpuPoisoned)?;
         let state = state.as_ref().ok_or(RenderError::NotInitializedYet)?;
 
-        closure(&state).await.into()
+        closure(state).await.into()
     }
 }
 
@@ -264,10 +262,6 @@ impl GraphicsState {
         })
     }
 
-    // pub fn get_instance(&self) -> &wgpu::Instance {
-    //     return &self.graphics_state_internal.instance;
-    // }
-
     pub fn with_state<R, RV, C>(&self, closure: C) -> Result<RV, RenderError>
     where
         C: FnOnce(&InitializedState) -> R,
@@ -284,8 +278,6 @@ impl GraphicsState {
     {
         self.graphics_state_internal.with_state_async(closure).await
     }
-
-    pub async fn get_state() {}
 
     pub async fn initialize_if_not_initialized(
         self: &Arc<Self>,

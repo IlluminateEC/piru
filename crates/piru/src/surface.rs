@@ -61,8 +61,10 @@ impl Surface {
         self.configuration.width = width;
         self.configuration.height = height;
 
-        self.graphics_state
-            .with_state(|state| Ok(self.surface.configure(&state.device, &self.configuration)))?;
+        self.graphics_state.with_state(|state| {
+            self.surface.configure(&state.device, &self.configuration);
+            Ok(())
+        })?;
 
         Ok(())
     }
@@ -71,7 +73,9 @@ impl Surface {
         use wgpu::CurrentSurfaceTexture;
 
         let frame = match self.surface.get_current_texture() {
-            CurrentSurfaceTexture::Success(frame) => frame,
+            CurrentSurfaceTexture::Success(frame) | CurrentSurfaceTexture::Suboptimal(frame) => {
+                frame
+            }
             CurrentSurfaceTexture::Timeout | CurrentSurfaceTexture::Occluded => {
                 return None;
             }
@@ -140,7 +144,7 @@ impl Surface {
                 });
 
                 // TODO: actual pipelines
-                render_pass.set_pipeline(&state.shader_registry.get_pipeline(0).unwrap());
+                render_pass.set_pipeline(state.shader_registry.get_pipeline(0).unwrap());
 
                 // self.buffers.bind_to(&mut render_pass);
 

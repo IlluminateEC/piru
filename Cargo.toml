@@ -13,10 +13,8 @@ include = ["AUTHORS.txt", "EXCEPTION.txt", "LICENSE-AGPLv3.txt"]
 
 [workspace.dependencies]
 log = "0.4.34"
-# wgpu = { version = "30.0.1", default-features = false, features = ["dx12", "gles", "metal", "parking_lot", "spirv", "std", "vulkan", "web", "webgpu"] }
-# winit = { version = "0.30.13", default-features = false, features = ["rwh_06", "wayland", "wayland-csd-adwaita", "x11"] }
-wgpu = { version = "30.0.1", features = ["spirv"] }
-winit = "0.30.13"
+wgpu = { version = "30.0.1", default-features = false, features = ["gles", "parking_lot", "spirv", "std", "vulkan"] }
+winit = { version = "0.30.13", default-features = false, features = ["rwh_06", "wayland", "wayland-csd-adwaita", "x11"] }
 
 [workspace.lints.clippy]
 correctness = { level = "deny", priority = -1 }
@@ -57,3 +55,7 @@ cast_possible_truncation = "deny"
 cast_possible_wrap = "deny"
 cast_precision_loss = "deny"
 cast_sign_loss = "deny"
+
+[profile.release]
+opt-level = "z"
+lto = "fat"
