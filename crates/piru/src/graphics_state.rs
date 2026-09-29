@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    sync::{Arc, RwLock},
+    sync::{Arc, Mutex, RwLock},
 };
 
 use wgpu::{Device, RenderPipeline, ShaderModule};
@@ -240,7 +240,7 @@ impl GraphicsStateInternal {
 
 pub struct GraphicsState {
     pub(crate) graphics_state_internal: Arc<GraphicsStateInternal>,
-    pub window_manager: WindowManager,
+    pub window_manager: Mutex<WindowManager>,
 }
 
 impl GraphicsState {
@@ -260,7 +260,7 @@ impl GraphicsState {
 
         Arc::new(Self {
             graphics_state_internal: graphics_state_internal.clone(),
-            window_manager: WindowManager::new(graphics_state_internal),
+            window_manager: Mutex::new(WindowManager::new(graphics_state_internal)),
         })
     }
 

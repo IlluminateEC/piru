@@ -48,7 +48,18 @@ impl ApplicationHandler for Piru {
 
         match self.graphics_state {
             Some(ref state) => {
-                spin_until_ready(state.window_manager.create_window(event_loop)).unwrap();
+                let (_, window) = pollster::block_on(
+                    self.graphics_state
+                        .as_ref()
+                        .unwrap()
+                        .window_manager
+                        .lock()
+                        .unwrap()
+                        .create_window(event_loop),
+                )
+                .unwrap();
+
+                window.window.request_redraw();
             }
             None => unsafe { unreachable_unchecked() },
         }
@@ -68,10 +79,10 @@ impl ApplicationHandler for Piru {
     ) {
         use winit::event::WindowEvent;
 
-        let Some(window_manager) = self
+        let Some(mut window_manager) = self
             .graphics_state
             .as_ref()
-            .map(|state| unsafe { &mut (*Arc::as_ptr(&state).cast_mut()).window_manager })
+            .map(|state| state.window_manager.lock().unwrap())
         else {
             return;
         };
@@ -120,18 +131,6 @@ impl ApplicationHandler for Piru {
             _ => {
                 dbg!(event);
             }
-        }
-    }
-}
-
-fn spin_until_ready<T>(future: impl Future<Output = T>) -> T {
-    let mut future = std::pin::pin!(future);
-    let mut context = Context::from_waker(Waker::noop());
-
-    loop {
-        match future.as_mut().poll(&mut context) {
-            std::task::Poll::Ready(value) => return value,
-            std::task::Poll::Pending => (),
         }
     }
 }

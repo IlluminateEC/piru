@@ -26,7 +26,7 @@ impl WindowManager {
     }
 
     pub async fn create_window(
-        &self,
+        &mut self,
         event_loop: &winit::event_loop::ActiveEventLoop,
     ) -> Result<(WindowId, Arc<Window>), RenderError> {
         let window = Window::new(self.graphics_state.clone(), event_loop).await?;
@@ -34,9 +34,11 @@ impl WindowManager {
         window.window.set_title(":3");
         window.window.set_visible(true);
 
-        window.surface.redraw()?;
+        let id = window.window.id();
 
-        Ok((window.window.id(), window))
+        self.windows.insert(id, window.clone());
+
+        Ok((id, window))
     }
 
     pub fn remove_window(&mut self, id: WindowId) -> Result<(), RenderError> {
