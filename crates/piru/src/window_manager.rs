@@ -21,7 +21,7 @@ impl WindowManager {
         }
     }
 
-    pub async fn get_window(&self, id: WindowId) -> Option<&Arc<Window>> {
+    pub fn get_window(&self, id: WindowId) -> Option<&Arc<Window>> {
         self.windows.get(&id)
     }
 
@@ -37,5 +37,15 @@ impl WindowManager {
         window.surface.redraw()?;
 
         Ok((window.window.id(), window))
+    }
+
+    pub fn remove_window(&mut self, id: WindowId) -> Result<(), RenderError> {
+        self.windows.remove(&id);
+
+        Ok(())
+    }
+
+    pub fn all_windows_closed(&self) -> bool {
+        self.windows.is_empty()
     }
 }

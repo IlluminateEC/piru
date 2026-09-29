@@ -5,168 +5,14 @@ pub mod window;
 pub mod window_manager;
 
 use std::{
-    collections::HashMap,
     hint::unreachable_unchecked,
     sync::Arc,
     task::{Context, Waker},
 };
 
-use wgpu::{PipelineCompilationOptions, ShaderModule, Surface, TextureFormat};
-use winit::{application::ApplicationHandler, window::WindowId};
+use winit::application::ApplicationHandler;
 
-use crate::{
-    error::RenderError, graphics_state::GraphicsState, window::Window,
-    window_manager::WindowManager,
-};
-
-pub struct InitializedState {
-    pub adapter: wgpu::Adapter,
-    pub device: wgpu::Device,
-    pub queue: wgpu::Queue,
-    pub swapchain_format: TextureFormat,
-
-    pub shaders: HashMap<String, Arc<ShaderModule>>,
-    pub render_pipelines: Vec<Arc<wgpu::RenderPipeline>>,
-}
-
-const MSAA_SAMPLES: u32 = 4;
-
-impl InitializedState {
-    pub async fn new(
-        graphics: Arc<GraphicsState>,
-        surface: &Surface<'_>,
-    ) -> Result<Self, RenderError> {
-        let adapter = graphics
-            .instance
-            .request_adapter(&wgpu::RequestAdapterOptionsBase {
-                power_preference: wgpu::PowerPreference::HighPerformance,
-                force_fallback_adapter: false,
-                compatible_surface: Some(surface),
-                apply_limit_buckets: false,
-            })
-            .await
-            .map_err(|error| RenderError::UnsupportedHardware {
-                message: "Unable to find an adapter that supports Piru.".to_string(),
-                error: Box::new(error),
-            })?;
-
-        let (device, queue) = adapter
-            .request_device(&wgpu::wgt::DeviceDescriptor {
-                label: None,
-                required_features: wgpu::Features::default(),
-                required_limits: wgpu::Limits::defaults().using_resolution(adapter.limits()),
-                experimental_features: wgpu::ExperimentalFeatures::disabled(),
-                memory_hints: wgpu::MemoryHints::Performance,
-                trace: wgpu::Trace::Off,
-            })
-            .await
-            .map_err(|error| RenderError::UnsupportedHardware {
-                message: "Unable to find a device that supports Piru.".to_string(),
-                error: Box::new(error),
-            })?;
-
-        log::info!(
-            "Using rendering device: {}\n\tBackend: {}\n\tType: {:?}\n\tDriver: {}\n\tDriver info: {}",
-            device.adapter_info().name,
-            device.adapter_info().backend,
-            device.adapter_info().device_type,
-            device.adapter_info().driver,
-            device.adapter_info().driver_info,
-        );
-
-        let swapchain_format = Self::get_usable_swapchain_format(&adapter, surface)?;
-
-        let mut shaders = HashMap::new();
-
-        shaders.insert(
-            "vertex".to_string(),
-            Arc::new(
-                device.create_shader_module(wgpu::include_spirv!("../../../shaders/vertex.spv")),
-            ),
-        );
-        shaders.insert(
-            "fragment".to_string(),
-            Arc::new(
-                device.create_shader_module(wgpu::include_spirv!("../../../shaders/fragment.spv")),
-            ),
-        );
-
-        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: None,
-            bind_group_layouts: &[],
-            immediate_size: 0,
-        });
-
-        let render_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: None,
-            layout: Some(&pipeline_layout),
-            vertex: wgpu::VertexState {
-                module: shaders.get("vertex").unwrap(),
-                entry_point: None,
-                compilation_options: PipelineCompilationOptions::default(),
-                buffers: &[],
-            },
-            primitive: wgpu::PrimitiveState::default(),
-            depth_stencil: None,
-            multisample: wgpu::MultisampleState {
-                count: MSAA_SAMPLES,
-                mask: !0,
-                alpha_to_coverage_enabled: false,
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: shaders.get("fragment").unwrap(),
-                entry_point: None,
-                compilation_options: PipelineCompilationOptions::default(),
-                targets: &[Some(wgpu::ColorTargetState {
-                    format: swapchain_format,
-
-                    blend: Some(wgpu::BlendState {
-                        color: wgpu::BlendComponent {
-                            src_factor: wgpu::BlendFactor::SrcAlpha,
-                            dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
-                            operation: wgpu::BlendOperation::Add,
-                        },
-                        alpha: wgpu::BlendComponent {
-                            src_factor: wgpu::BlendFactor::One,
-                            dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
-                            operation: wgpu::BlendOperation::Add,
-                        },
-                    }),
-
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
-            }),
-            multiview_mask: None,
-            cache: None,
-        });
-
-        let render_pipelines = vec![Arc::new(render_pipeline)];
-
-        Ok(Self {
-            adapter,
-            device,
-            queue,
-            swapchain_format,
-            shaders,
-            render_pipelines,
-        })
-    }
-
-    fn get_usable_swapchain_format(
-        adapter: &wgpu::Adapter,
-        surface: &wgpu::Surface,
-    ) -> Result<wgpu::TextureFormat, RenderError> {
-        let swapchain_capabilities = surface.get_capabilities(adapter);
-
-        [
-            wgpu::TextureFormat::Bgra8Unorm,
-            wgpu::TextureFormat::Rgba8Unorm,
-        ]
-        .into_iter()
-        .find(|format| swapchain_capabilities.formats.contains(format))
-        .ok_or_else(|| RenderError::UnsupportedHardwareNoError("The device does not support either Bgra8Unorm or Rgba8Unorm but at least one is required.".to_string()))
-    }
-}
+use crate::graphics_state::GraphicsState;
 
 pub struct Piru {
     graphics_state: Option<Arc<GraphicsState>>,
@@ -209,6 +55,8 @@ impl ApplicationHandler for Piru {
     }
 
     fn suspended(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
+        log::info!("Suspending rendering at request of system.");
+
         self.graphics_state = None;
     }
 
@@ -218,7 +66,61 @@ impl ApplicationHandler for Piru {
         window_id: winit::window::WindowId,
         event: winit::event::WindowEvent,
     ) {
-        // match event {}
+        use winit::event::WindowEvent;
+
+        let Some(window_manager) = self
+            .graphics_state
+            .as_ref()
+            .map(|state| unsafe { &mut (*Arc::as_ptr(&state).cast_mut()).window_manager })
+        else {
+            return;
+        };
+
+        let Some(window) = window_manager.get_window(window_id) else {
+            // The window has already been closed.
+            // Why are we still getting messages for it?
+            return;
+        };
+
+        match event {
+            WindowEvent::CloseRequested => {
+                window_manager.remove_window(window_id).unwrap();
+
+                if window_manager.all_windows_closed() {
+                    log::info!("All windows have been closed, exiting.");
+                    event_loop.exit();
+                }
+            }
+
+            WindowEvent::RedrawRequested => {
+                window.redraw().unwrap();
+            }
+
+            WindowEvent::Resized(size) => {
+                unsafe {
+                    (*Arc::as_ptr(window).cast_mut())
+                        .resize(size.width, size.height)
+                        .unwrap()
+                };
+
+                window.window.request_redraw();
+            }
+
+            WindowEvent::Occluded(is_occluded) => {
+                if !is_occluded {
+                    window.window.request_redraw();
+                }
+            }
+
+            WindowEvent::ScaleFactorChanged { .. } => {}
+            WindowEvent::Focused(_) => {}
+            WindowEvent::Ime(_) => {}
+            WindowEvent::CursorMoved { .. } => {}
+
+            _ => {
+                dbg!(event);
+            }
+        }
     }
 }
 

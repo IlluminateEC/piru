@@ -33,6 +33,14 @@ impl Window {
         }))
     }
 
+    pub fn redraw(&self) -> Result<(), RenderError> {
+        self.surface.redraw()
+    }
+
+    pub fn resize(&mut self, width: u32, height: u32) -> Result<(), RenderError> {
+        self.surface.resize(width, height)
+    }
+
     pub const fn set_occluded(&mut self, occluded: bool) {
         self.is_occluded = occluded;
     }
