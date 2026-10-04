@@ -25,13 +25,16 @@ impl Surface {
             .await?;
 
         let (mut configuration, format) = graphics_state.with_state(|state| {
-            let config = wgpu_surface
-                .get_default_config(&state.adapter, width, height)
-                .ok_or_else(|| {
-                    RenderError::UnsupportedHardwareNoError(
-                        "Surface is unsupported by device".to_string(),
-                    )
-                })?;
+            let config = wgpu::SurfaceConfiguration {
+                present_mode: wgpu::PresentMode::AutoVsync,
+                ..wgpu_surface
+                    .get_default_config(&state.adapter, width, height)
+                    .ok_or_else(|| {
+                        RenderError::UnsupportedHardwareNoError(
+                            "Surface is unsupported by device".to_string(),
+                        )
+                    })?
+            };
 
             let format = Surface::get_usable_swapchain_format(&wgpu_surface, &state.adapter)?;
 
