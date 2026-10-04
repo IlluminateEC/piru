@@ -17,13 +17,13 @@ pub struct PipelineKey {
 }
 
 pub struct ShaderRegistry {
-    device: Arc<Device>,
+    device: Device,
     shaders: HashMap<ShaderId, Arc<ShaderModule>>,
     next_id: ShaderId,
 }
 
 impl ShaderRegistry {
-    pub fn new(device: Arc<Device>) -> Self {
+    pub fn new(device: Device) -> Self {
         Self {
             device,
             shaders: HashMap::new(),
@@ -49,12 +49,12 @@ impl ShaderRegistry {
 pub const MSAA_SAMPLES: u32 = 4;
 
 pub struct PipelineCache {
-    device: Arc<Device>,
+    device: Device,
     pipelines: HashMap<PipelineKey, Arc<RenderPipeline>>,
 }
 
 impl PipelineCache {
-    pub fn new(device: Arc<Device>) -> Self {
+    pub fn new(device: Device) -> Self {
         Self {
             device,
             pipelines: HashMap::new(),
@@ -200,9 +200,7 @@ impl InitializedState {
             device.adapter_info().driver_info,
         );
 
-        let device_arc = Arc::new(device.clone());
-
-        let mut shader_registry = ShaderRegistry::new(device_arc.clone());
+        let mut shader_registry = ShaderRegistry::new(device.clone());
 
         let vertex_shader_id = shader_registry
             .add(device.create_shader_module(wgpu::include_spirv!("../../../shaders/vertex.spv")));
@@ -210,7 +208,7 @@ impl InitializedState {
             device.create_shader_module(wgpu::include_spirv!("../../../shaders/fragment.spv")),
         );
 
-        let pipeline_cache = Mutex::new(PipelineCache::new(device_arc));
+        let pipeline_cache = Mutex::new(PipelineCache::new(device.clone()));
 
         Ok(Self {
             adapter,
