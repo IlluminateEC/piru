@@ -4,7 +4,7 @@ pub mod surface;
 pub mod window;
 pub mod window_manager;
 
-use std::{hint::unreachable_unchecked, sync::Arc};
+use std::{hint::unreachable_unchecked, str::FromStr, sync::Arc};
 
 use winit::application::ApplicationHandler;
 
@@ -147,7 +147,7 @@ impl ApplicationHandler for Piru {
             WindowEvent::CursorMoved { .. } => {}
 
             _ => {
-                dbg!(event);
+                log::debug!("{event:?}");
             }
         }
     }
@@ -155,7 +155,10 @@ impl ApplicationHandler for Piru {
 
 fn main() {
     colog::default_builder()
-        .filter_level(log::LevelFilter::Info)
+        .filter_level(match std::env::var("PIRU_LOG_LEVEL") {
+            Ok(level) => log::LevelFilter::from_str(&level).unwrap_or(log::LevelFilter::Info),
+            Err(_) => log::LevelFilter::Info,
+        })
         .init();
 
     Piru::new().run();
