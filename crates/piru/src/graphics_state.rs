@@ -18,7 +18,7 @@ pub struct PipelineKey {
 
 pub struct ShaderRegistry {
     device: Device,
-    shaders: HashMap<ShaderId, Arc<ShaderModule>>,
+    shaders: HashMap<ShaderId, ShaderModule>,
     next_id: ShaderId,
 }
 
@@ -35,12 +35,12 @@ impl ShaderRegistry {
         let id = self.next_id;
         self.next_id += 1;
 
-        self.shaders.insert(id, Arc::new(module));
+        self.shaders.insert(id, module);
 
         id
     }
 
-    pub fn get(&self, id: ShaderId) -> Option<&Arc<ShaderModule>> {
+    pub fn get(&self, id: ShaderId) -> Option<&ShaderModule> {
         self.shaders.get(&id)
     }
 }
@@ -50,7 +50,7 @@ pub const MSAA_SAMPLES: u32 = 4;
 
 pub struct PipelineCache {
     device: Device,
-    pipelines: HashMap<PipelineKey, Arc<RenderPipeline>>,
+    pipelines: HashMap<PipelineKey, RenderPipeline>,
 }
 
 impl PipelineCache {
@@ -61,7 +61,7 @@ impl PipelineCache {
         }
     }
 
-    pub fn get_pipeline(&self, key: PipelineKey) -> Option<&Arc<RenderPipeline>> {
+    pub fn get_pipeline(&self, key: PipelineKey) -> Option<&RenderPipeline> {
         self.pipelines.get(&key)
     }
 
@@ -71,7 +71,7 @@ impl PipelineCache {
         fragment_shader_id: ShaderId,
         format: wgpu::TextureFormat,
         shaders: &ShaderRegistry,
-    ) -> Arc<RenderPipeline> {
+    ) -> RenderPipeline {
         let key = PipelineKey {
             vertex_shader_id,
             fragment_shader_id,
@@ -139,9 +139,8 @@ impl PipelineCache {
                 cache: None,
             });
 
-        let pipeline_arc = Arc::new(render_pipeline);
-        self.pipelines.insert(key, pipeline_arc.clone());
-        pipeline_arc
+        self.pipelines.insert(key, render_pipeline.clone());
+        render_pipeline
     }
 }
 
