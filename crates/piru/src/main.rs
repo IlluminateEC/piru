@@ -12,12 +12,16 @@ use crate::graphics_state::GraphicsState;
 
 pub struct Piru {
     graphics_state: Option<Arc<GraphicsState>>,
+    frame_count: u8,
+    last_frame_chunk: std::time::Instant,
 }
 
 impl Piru {
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             graphics_state: None,
+            frame_count: 0,
+            last_frame_chunk: std::time::Instant::now(),
         }
     }
 
@@ -98,7 +102,27 @@ impl ApplicationHandler for Piru {
             }
 
             WindowEvent::RedrawRequested => {
+                if self.frame_count >= 120 {
+                    let now = std::time::Instant::now();
+
+                    let duration = now - self.last_frame_chunk;
+
+                    log::info!(
+                        "Took {:?} for {} frames ({:?} FPS)",
+                        duration,
+                        self.frame_count,
+                        (duration.as_secs_f64() / 120.0).powf(-1.0)
+                    );
+
+                    self.frame_count = 0;
+                    self.last_frame_chunk = now;
+                }
+
+                self.frame_count += 1;
+
                 window.redraw().unwrap();
+
+                window.window.request_redraw();
             }
 
             WindowEvent::Resized(size) => {
