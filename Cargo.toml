@@ -59,3 +59,7 @@ cast_sign_loss = "deny"
 [profile.release]
 opt-level = "z"
 lto = "fat"
+
+[profile.profiling]
+inherits = "release"
+debug = true
