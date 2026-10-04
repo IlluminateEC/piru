@@ -4,7 +4,7 @@ pub mod surface;
 pub mod window;
 pub mod window_manager;
 
-use std::{hint::unreachable_unchecked, str::FromStr, sync::Arc};
+use std::{str::FromStr, sync::Arc};
 
 use winit::application::ApplicationHandler;
 
@@ -30,7 +30,7 @@ impl Piru {
             .build()
             .unwrap()
             .run_app(self)
-            .unwrap()
+            .unwrap();
     }
 }
 
@@ -59,7 +59,8 @@ impl ApplicationHandler for Piru {
 
                 window.window.request_redraw();
             }
-            None => unsafe { unreachable_unchecked() },
+
+            None => unreachable!(),
         }
     }
 
@@ -69,6 +70,7 @@ impl ApplicationHandler for Piru {
         self.graphics_state = None;
     }
 
+    #[allow(clippy::arithmetic_side_effects)]
     fn window_event(
         &mut self,
         event_loop: &winit::event_loop::ActiveEventLoop,
@@ -111,7 +113,7 @@ impl ApplicationHandler for Piru {
                         "Took {:?} for {} frames ({:?} FPS)",
                         duration,
                         self.frame_count,
-                        (duration.as_secs_f64() / 120.0).powf(-1.0)
+                        (duration.as_secs_f64() / 120.0).powi(-1)
                     );
 
                     self.frame_count = 0;

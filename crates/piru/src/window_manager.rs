@@ -10,7 +10,7 @@ pub struct WindowManager {
 }
 
 impl WindowManager {
-    pub fn new(graphics_state: Arc<GraphicsStateInternal>) -> Self {
+    pub(crate) fn new(graphics_state: Arc<GraphicsStateInternal>) -> Self {
         Self {
             graphics_state,
             windows: HashMap::new(),
@@ -21,6 +21,8 @@ impl WindowManager {
         self.windows.get(&id)
     }
 
+    // Guh. Can't really fix it, so…
+    #[allow(clippy::future_not_send)]
     pub async fn create_window(
         &mut self,
         event_loop: &winit::event_loop::ActiveEventLoop,

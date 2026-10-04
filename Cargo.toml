@@ -34,11 +34,12 @@ indexing_slicing = "deny"
 panic = "deny"
 todo = "deny"
 unimplemented = "deny"
-unreachable = "deny"
+unreachable = "allow"
 unwrap_used = "deny"
 
 cargo = { level = "warn", priority = -1 }
 cargo_common_metadata = "allow"
+multiple_crate_versions = "allow"  # I wish for a future where this doesn't give us 16 warnings that we can't fix.
 
 enum_glob_use = "allow"
 must_use_candidate = "allow"

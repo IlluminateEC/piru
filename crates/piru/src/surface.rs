@@ -9,7 +9,7 @@ pub struct Surface {
 }
 
 impl Surface {
-    pub async fn new(
+    pub(crate) async fn new(
         graphics_state: Arc<GraphicsStateInternal>,
         window: Arc<winit::window::Window>,
     ) -> Result<Self, RenderError> {
@@ -36,7 +36,7 @@ impl Surface {
                     })?
             };
 
-            let format = Surface::get_usable_swapchain_format(&wgpu_surface, &state.adapter)?;
+            let format = Self::get_usable_swapchain_format(&wgpu_surface, &state.adapter)?;
 
             Ok((config, format))
         })?;

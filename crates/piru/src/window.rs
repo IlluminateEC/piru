@@ -11,7 +11,9 @@ pub struct Window {
 }
 
 impl Window {
-    pub async fn new(
+    // Guh. Can't really fix it, so…
+    #[allow(clippy::future_not_send)]
+    pub(crate) async fn new(
         graphics_state: Arc<GraphicsStateInternal>,
         event_loop: &winit::event_loop::ActiveEventLoop,
     ) -> Result<Arc<Self>, RenderError> {

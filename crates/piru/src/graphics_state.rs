@@ -31,6 +31,7 @@ impl ShaderRegistry {
         }
     }
 
+    #[allow(clippy::arithmetic_side_effects)]
     pub fn add(&mut self, module: ShaderModule) -> ShaderId {
         let id = self.next_id;
         self.next_id += 1;
