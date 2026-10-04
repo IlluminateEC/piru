@@ -1,11 +1,11 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use crate::{error::RenderError, graphics_state::GraphicsStateInternal, surface::Surface};
 
 pub struct Window {
     graphics_state: Arc<GraphicsStateInternal>,
     pub window: Arc<winit::window::Window>,
-    pub surface: Surface,
+    pub surface: RwLock<Surface>,
 
     pub is_occluded: bool,
 }
@@ -21,7 +21,7 @@ impl Window {
                 .map_err(RenderError::WindowError)?,
         );
 
-        let surface = Surface::new(graphics_state.clone(), window.clone()).await?;
+        let surface = RwLock::new(Surface::new(graphics_state.clone(), window.clone()).await?);
 
         Ok(Arc::new(Self {
             graphics_state,
@@ -32,11 +32,11 @@ impl Window {
     }
 
     pub fn redraw(&self) -> Result<(), RenderError> {
-        self.surface.redraw()
+        self.surface.read().unwrap().redraw()
     }
 
-    pub fn resize(&mut self, width: u32, height: u32) -> Result<(), RenderError> {
-        self.surface.resize(width, height)
+    pub fn resize(&self, width: u32, height: u32) -> Result<(), RenderError> {
+        self.surface.write().unwrap().resize(width, height)
     }
 
     pub const fn set_occluded(&mut self, occluded: bool) {

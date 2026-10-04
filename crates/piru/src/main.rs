@@ -126,11 +126,7 @@ impl ApplicationHandler for Piru {
             }
 
             WindowEvent::Resized(size) => {
-                unsafe {
-                    (*Arc::as_ptr(window).cast_mut())
-                        .resize(size.width, size.height)
-                        .unwrap()
-                };
+                window.resize(size.width, size.height).unwrap();
 
                 window.window.request_redraw();
             }
