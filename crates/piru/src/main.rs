@@ -14,6 +14,7 @@ pub struct Piru {
     graphics_state: Option<Arc<GraphicsState>>,
     frame_count: u8,
     last_frame_chunk: std::time::Instant,
+    last_frame: std::time::Instant,
 }
 
 impl Piru {
@@ -22,6 +23,7 @@ impl Piru {
             graphics_state: None,
             frame_count: 0,
             last_frame_chunk: std::time::Instant::now(),
+            last_frame: std::time::Instant::now(),
         }
     }
 
@@ -104,9 +106,13 @@ impl ApplicationHandler for Piru {
             }
 
             WindowEvent::RedrawRequested => {
-                if self.frame_count >= 120 {
-                    let now = std::time::Instant::now();
+                let now = std::time::Instant::now();
 
+                let delta = (now - self.last_frame).as_secs_f64();
+
+                log::debug!("Frame delta {}s", delta);
+
+                if self.frame_count >= 120 {
                     let duration = now - self.last_frame_chunk;
 
                     log::info!(
@@ -121,6 +127,7 @@ impl ApplicationHandler for Piru {
                 }
 
                 self.frame_count += 1;
+                self.last_frame = now;
 
                 window.redraw().unwrap();
 
