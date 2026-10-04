@@ -45,9 +45,7 @@ impl ApplicationHandler for Piru {
         match self.graphics_state {
             Some(ref state) => {
                 let (_, window) = pollster::block_on(
-                    self.graphics_state
-                        .as_ref()
-                        .unwrap()
+                    state
                         .window_manager
                         .lock()
                         .unwrap()
@@ -61,7 +59,7 @@ impl ApplicationHandler for Piru {
         }
     }
 
-    fn suspended(&mut self, event_loop: &winit::event_loop::ActiveEventLoop) {
+    fn suspended(&mut self, _event_loop: &winit::event_loop::ActiveEventLoop) {
         log::info!("Suspending rendering at request of system.");
 
         self.graphics_state = None;

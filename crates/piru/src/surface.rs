@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{GraphicsState, error::RenderError, graphics_state::GraphicsStateInternal};
+use crate::{error::RenderError, graphics_state::GraphicsStateInternal};
 
 pub struct Surface {
     graphics_state: Arc<GraphicsStateInternal>,
@@ -24,23 +24,21 @@ impl Surface {
             .initialize_if_not_initialized(&wgpu_surface)
             .await?;
 
-        let mut configuration = graphics_state.with_state(|state| {
-            wgpu_surface
+        let (mut configuration, format) = graphics_state.with_state(|state| {
+            let config = wgpu_surface
                 .get_default_config(&state.adapter, width, height)
                 .ok_or_else(|| {
                     RenderError::UnsupportedHardwareNoError(
                         "Surface is unsupported by device".to_string(),
                     )
-                })
+                })?;
+
+            let format = Surface::get_usable_swapchain_format(&wgpu_surface, &state.adapter)?;
+
+            Ok((config, format))
         })?;
 
-        configuration.format = graphics_state
-            .state
-            .read()
-            .map_err(|_| RenderError::GpuPoisoned)?
-            .as_ref()
-            .ok_or(RenderError::NotInitializedYet)?
-            .swapchain_format;
+        configuration.format = format;
 
         graphics_state.with_state(|state| {
             wgpu_surface.configure(&state.device, &configuration);
@@ -144,7 +142,14 @@ impl Surface {
                 });
 
                 // TODO: actual pipelines
-                render_pass.set_pipeline(state.shader_registry.get_pipeline(0).unwrap());
+                let mut pipeline_cache = state.pipeline_cache.lock().unwrap();
+                let pipeline = pipeline_cache.get_or_create_pipeline(
+                    state.vertex_shader_id,
+                    state.fragment_shader_id,
+                    frame.texture.format(),
+                    &state.shader_registry,
+                );
+                render_pass.set_pipeline(&pipeline);
 
                 // self.buffers.bind_to(&mut render_pass);
 

@@ -5,47 +5,82 @@ use std::{
 
 use wgpu::{Device, RenderPipeline, ShaderModule};
 
-use crate::{error::RenderError, surface::Surface, window_manager::WindowManager};
+use crate::{error::RenderError, window_manager::WindowManager};
 
 pub type ShaderId = u32;
-pub type PipelineId = u32;
+
+#[derive(Hash, PartialEq, Eq, Clone, Copy)]
+pub struct PipelineKey {
+    pub vertex_shader_id: ShaderId,
+    pub fragment_shader_id: ShaderId,
+    pub format: wgpu::TextureFormat,
+}
 
 pub struct ShaderRegistry {
     device: Arc<Device>,
-    max_shaders: u32,
-    max_pipelines: u32,
-
     shaders: HashMap<ShaderId, Arc<ShaderModule>>,
-    render_pipelines: HashMap<PipelineId, Arc<RenderPipeline>>,
+    next_id: ShaderId,
 }
 
 impl ShaderRegistry {
     pub fn new(device: Arc<Device>) -> Self {
-        ShaderRegistry {
+        Self {
             device,
-            max_shaders: 0,
-            max_pipelines: 0,
             shaders: HashMap::new(),
-            render_pipelines: HashMap::new(),
+            next_id: 0,
         }
     }
 
-    pub fn add_shader(&mut self, module: ShaderModule) -> ShaderId {
-        let id = self.max_shaders;
-        self.max_shaders += 1;
+    pub fn add(&mut self, module: ShaderModule) -> ShaderId {
+        let id = self.next_id;
+        self.next_id += 1;
 
         self.shaders.insert(id, Arc::new(module));
 
         id
     }
 
-    pub fn get_shader(&self, id: ShaderId) -> Option<&Arc<ShaderModule>> {
+    pub fn get(&self, id: ShaderId) -> Option<&Arc<ShaderModule>> {
         self.shaders.get(&id)
     }
+}
 
-    pub fn add_pipeline(&mut self, vertex: ShaderId, fragment: ShaderId) -> PipelineId {
-        let id = self.max_pipelines;
-        self.max_pipelines += 1;
+// TODO: really shouldn't be constant
+pub const MSAA_SAMPLES: u32 = 4;
+
+pub struct PipelineCache {
+    device: Arc<Device>,
+    pipelines: HashMap<PipelineKey, Arc<RenderPipeline>>,
+}
+
+impl PipelineCache {
+    pub fn new(device: Arc<Device>) -> Self {
+        Self {
+            device,
+            pipelines: HashMap::new(),
+        }
+    }
+
+    pub fn get_pipeline(&self, key: PipelineKey) -> Option<&Arc<RenderPipeline>> {
+        self.pipelines.get(&key)
+    }
+
+    pub fn get_or_create_pipeline(
+        &mut self,
+        vertex_shader_id: ShaderId,
+        fragment_shader_id: ShaderId,
+        format: wgpu::TextureFormat,
+        shaders: &ShaderRegistry,
+    ) -> Arc<RenderPipeline> {
+        let key = PipelineKey {
+            vertex_shader_id,
+            fragment_shader_id,
+            format,
+        };
+
+        if let Some(pipeline) = self.pipelines.get(&key) {
+            return pipeline.clone();
+        }
 
         let pipeline_layout = self
             .device
@@ -61,7 +96,9 @@ impl ShaderRegistry {
                 label: None,
                 layout: Some(&pipeline_layout),
                 vertex: wgpu::VertexState {
-                    module: self.shaders.get(&vertex).unwrap(),
+                    module: shaders
+                        .get(vertex_shader_id)
+                        .expect("Vertex shader not found"),
                     entry_point: None,
                     compilation_options: wgpu::PipelineCompilationOptions::default(),
                     buffers: &[],
@@ -74,11 +111,13 @@ impl ShaderRegistry {
                     alpha_to_coverage_enabled: false,
                 },
                 fragment: Some(wgpu::FragmentState {
-                    module: self.shaders.get(&fragment).unwrap(),
+                    module: shaders
+                        .get(fragment_shader_id)
+                        .expect("Fragment shader not found"),
                     entry_point: None,
                     compilation_options: wgpu::PipelineCompilationOptions::default(),
                     targets: &[Some(wgpu::ColorTargetState {
-                        format: wgpu::TextureFormat::Bgra8Unorm, // TODO: also shouldn't be a constant
+                        format,
 
                         blend: Some(wgpu::BlendState {
                             color: wgpu::BlendComponent {
@@ -100,26 +139,22 @@ impl ShaderRegistry {
                 cache: None,
             });
 
-        self.render_pipelines.insert(id, Arc::new(render_pipeline));
-
-        id
-    }
-
-    pub fn get_pipeline(&self, id: PipelineId) -> Option<&Arc<RenderPipeline>> {
-        self.render_pipelines.get(&id)
+        let pipeline_arc = Arc::new(render_pipeline);
+        self.pipelines.insert(key, pipeline_arc.clone());
+        pipeline_arc
     }
 }
-
-// TODO: really shouldn't be constant
-pub const MSAA_SAMPLES: u32 = 4;
 
 pub struct InitializedState {
     pub adapter: wgpu::Adapter,
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
-    pub swapchain_format: wgpu::TextureFormat,
 
     pub shader_registry: ShaderRegistry,
+    pub pipeline_cache: Mutex<PipelineCache>,
+    // TODO: actual world entities w/ attached shaders
+    pub vertex_shader_id: ShaderId,
+    pub fragment_shader_id: ShaderId,
 }
 
 impl InitializedState {
@@ -165,26 +200,26 @@ impl InitializedState {
             device.adapter_info().driver_info,
         );
 
-        let swapchain_format = Surface::get_usable_swapchain_format(surface, &adapter)?;
+        let device_arc = Arc::new(device.clone());
 
-        let mut shader_registry = ShaderRegistry::new(Arc::new(device.clone()));
+        let mut shader_registry = ShaderRegistry::new(device_arc.clone());
 
-        let vertex = shader_registry.add_shader(
-            device.create_shader_module(wgpu::include_spirv!("../../../shaders/vertex.spv")),
-        );
-        let fragment = shader_registry.add_shader(
+        let vertex_shader_id = shader_registry
+            .add(device.create_shader_module(wgpu::include_spirv!("../../../shaders/vertex.spv")));
+        let fragment_shader_id = shader_registry.add(
             device.create_shader_module(wgpu::include_spirv!("../../../shaders/fragment.spv")),
         );
 
-        shader_registry.add_pipeline(vertex, fragment);
+        let pipeline_cache = Mutex::new(PipelineCache::new(device_arc));
 
         Ok(Self {
             adapter,
             device,
             queue,
-            swapchain_format,
-
             shader_registry,
+            pipeline_cache,
+            vertex_shader_id,
+            fragment_shader_id,
         })
     }
 }
