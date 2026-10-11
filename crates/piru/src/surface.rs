@@ -58,6 +58,10 @@ impl Surface {
         Ok(surface)
     }
 
+    pub fn get_format(&self) -> wgpu::TextureFormat {
+        self.configuration.format
+    }
+
     pub fn resize(&mut self, width: u32, height: u32) -> Result<(), RenderError> {
         self.configuration.width = width;
         self.configuration.height = height;
@@ -91,7 +95,12 @@ impl Surface {
         Some((frame, view))
     }
 
-    pub fn redraw(&self) -> Result<(), RenderError> {
+    pub fn redraw(
+        &self,
+        post_render: Option<
+            impl FnOnce((&wgpu::SurfaceTexture, &wgpu::TextureView), &mut wgpu::CommandEncoder) -> (),
+        >,
+    ) -> Result<(), RenderError> {
         self.graphics_state.with_state(|state| {
             let Some((frame, view)) = self.get_view() else {
                 return Ok(());
@@ -157,6 +166,10 @@ impl Surface {
                 // self.buffers.bind_to(&mut render_pass);
 
                 render_pass.draw(0..18, 0..1);
+            }
+
+            if let Some(post_render) = post_render {
+                post_render((&frame, &view), &mut encoder);
             }
 
             state.queue.submit(Some(encoder.finish()));

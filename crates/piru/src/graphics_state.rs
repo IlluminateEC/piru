@@ -104,7 +104,16 @@ impl PipelineCache {
                     compilation_options: wgpu::PipelineCompilationOptions::default(),
                     buffers: &[],
                 },
-                primitive: wgpu::PrimitiveState::default(),
+                primitive: wgpu::PrimitiveState {
+                    // topology: todo!(),
+                    // strip_index_format: todo!(),
+                    // front_face: todo!(),
+                    // cull_mode: todo!(),
+                    // unclipped_depth: todo!(),
+                    // polygon_mode: todo!(),
+                    // conservative: todo!(),
+                    ..Default::default()
+                },
                 depth_stencil: None,
                 multisample: wgpu::MultisampleState {
                     count: MSAA_SAMPLES,
@@ -149,6 +158,9 @@ pub struct InitializedState {
     pub adapter: wgpu::Adapter,
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
+
+    pub imgui_context: Mutex<dear_imgui_rs::Context>,
+    pub imgui_renderer: Mutex<dear_imgui_wgpu::WgpuRenderer>,
 
     pub shader_registry: ShaderRegistry,
     pub pipeline_cache: Mutex<PipelineCache>,
@@ -210,10 +222,34 @@ impl InitializedState {
 
         let pipeline_cache = Mutex::new(PipelineCache::new(device.clone()));
 
+        let mut imgui_context = {
+            let ctx = dear_imgui_rs::Context::create();
+            // ctx.font_atlas()
+            //     .try_claim_legacy_renderer()
+            //     .expect("the backend-free example uses the legacy font atlas")
+            //     .build();
+            ctx
+        };
+
+        let imgui_renderer = dear_imgui_wgpu::WgpuRenderer::new(
+            dear_imgui_wgpu::WgpuInitInfo::new(
+                device.clone(),
+                queue.clone(),
+                wgpu::TextureFormat::Bgra8Unorm,
+            ),
+            &mut imgui_context,
+        )
+        //RendererConsumer(FontAtlasRequiresManagedRebuild)
+        .unwrap();
+
         Ok(Self {
             adapter,
             device,
             queue,
+
+            imgui_context: Mutex::new(imgui_context),
+            imgui_renderer: Mutex::new(imgui_renderer),
+
             shader_registry,
             pipeline_cache,
             vertex_shader_id,

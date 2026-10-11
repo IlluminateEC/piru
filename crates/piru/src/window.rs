@@ -33,8 +33,13 @@ impl Window {
         }))
     }
 
-    pub fn redraw(&self) -> Result<(), RenderError> {
-        self.surface.read().unwrap().redraw()
+    pub fn redraw(
+        &self,
+        post_render: Option<
+            impl FnOnce((&wgpu::SurfaceTexture, &wgpu::TextureView), &mut wgpu::CommandEncoder) -> (),
+        >,
+    ) -> Result<(), RenderError> {
+        self.surface.read().unwrap().redraw(post_render)
     }
 
     pub fn resize(&self, width: u32, height: u32) -> Result<(), RenderError> {
